@@ -1,0 +1,118 @@
+from selenium import webdriver
+import cv2
+import time
+import random
+import pyautogui
+import pyaudio
+import wave
+import threading
+import numpy as np
+
+
+# Details for desktop recording
+screen_size = (1920, 1080)
+fourcc = cv2.VideoWriter_fourcc(*"XVID")
+out = cv2.VideoWriter("output.avi", fourcc, 14, screen_size)
+rec_seconds = 60
+fps = 20
+
+
+# Audio
+def start_rec_audio():
+    time.sleep(9)
+    chunk = 1024
+    format_fisier = pyaudio.paInt16
+    channels = 2
+    rate = 44100
+    record_seconds = 30
+    wave_output_filename = "output_sound.wav"
+
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=format_fisier,
+                    channels=channels,
+                    rate=rate,
+                    input=True,
+                    frames_per_buffer=chunk)
+
+    print("* recording")
+
+    frames = []
+
+    for i in range(0, int(rate / chunk * record_seconds)):
+        data = stream.read(chunk)
+        frames.append(data)
+
+    print("* done recording")
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    wf = wave.open(wave_output_filename, 'wb')
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(format_fisier))
+    wf.setframerate(rate)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+
+
+# Video:
+def start_rec_video():
+
+    for _ in range(rec_seconds):
+        for _ in range(fps):
+            img = pyautogui.screenshot()
+            frame = np.array(img)
+            final_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out.write(final_frame)
+
+
+# Lists:
+video_coords_list = [(480, 650), (900, 650), (1320, 650), (1740, 650), (480, 900), (900, 900), (1320, 900), (1740, 900)]
+skip_ad_button_coords = (1300, 800)
+
+
+# Function for opening the browser
+def open_browser():
+    # Here we define the function:
+    path = "C:\Program Files (x86)\chromedriver.exe"
+    driver = webdriver.Chrome(path)
+    driver.get("https://www.youtube.com/")
+    driver.maximize_window()
+    # This sleep is applied to wait some seconds before next step in order for the browser to config. itself
+    time.sleep(3)
+
+    # This function accepts cookies
+    pyautogui.click(1118, 1028)
+
+    # Choose the random video
+    coords_of_chosen_video = random.sample(video_coords_list, k=1)
+    print(coords_of_chosen_video[0])
+
+    click_this(coords_of_chosen_video)
+
+    # This function waits for the ad to end and clicks the skip add button
+    time.sleep(8.5)
+    pyautogui.click(1300, 800)
+
+
+# This function clicks the chosen video:
+def click_this(coords_list):
+    time.sleep(5)
+    pyautogui.click(coords_list[0][0], coords_list[0][1])
+
+
+# This function plots the audio file:
+def plot_audio():
+    pass
+
+
+# Threads:
+thread_rec_video = threading.Thread(target=start_rec_video)
+thread_open_browser = threading.Thread(target=open_browser)
+thread_rec_audio = threading.Thread(target=start_rec_audio)
+
+thread_rec_video.start()
+thread_open_browser.start()
+thread_rec_audio.start()
