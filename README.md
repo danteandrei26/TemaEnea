@@ -10,3 +10,7 @@ In order for the app to record the output signal (not microphone which is consid
 Now you can start the script.
 
 NOTE! The app should run once before plotting the audio file, for some reason it does not detect the file generated on the first try. The file needs to be there first, even if its empty (<output_sound.wav>)
+
+Version 1.4 updates:
+- Now it clicks on a random video
+- No need to double run the app in order for it to plot the file
