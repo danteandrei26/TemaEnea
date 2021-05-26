@@ -1,0 +1,156 @@
+# Imported libraries
+from selenium import webdriver
+import cv2
+import time
+import pyautogui
+import pyaudio
+import wave
+import threading
+import random
+import numpy as np
+from pydub import AudioSegment
+import soundfile as sfile
+import matplotlib.pyplot as plt
+
+
+# I don't know why, but the "output_sound.wav" sound file be here in the first place so we create a dummy one.
+def dummy_audio():
+    format_fisier = pyaudio.paInt16
+    channels = 2
+    rate = 44100
+    wave_output_filename = "output_sound.wav"
+    p = pyaudio.PyAudio()
+
+    wf = wave.open(wave_output_filename, 'wb')
+    wf.setnchannels(channels)
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(format_fisier))
+    wf.setframerate(rate)
+
+
+dummy_audio()
+
+
+# Audio Function
+def start_rec_audio():
+    chunk = 1024
+    format_fisier = pyaudio.paInt16
+    channels = 2
+    rate = 44100
+    record_seconds = 30
+    wave_output_filename = "output_sound.wav"
+    p = pyaudio.PyAudio()
+
+    stream = p.open(format=format_fisier,
+                    channels=channels,
+                    rate=rate,
+                    input=True,
+                    frames_per_buffer=chunk)
+
+    frames = []
+    for i in range(0, int(rate / chunk * record_seconds)):
+        audio_data = stream.read(chunk)
+        frames.append(audio_data)
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    wf = wave.open(wave_output_filename, 'wb')
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(format_fisier))
+    wf.setframerate(rate)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+
+
+# Details for desktop recording
+screen_size = (1920, 1080)
+fourcc = cv2.VideoWriter_fourcc(*"XVID")
+out = cv2.VideoWriter("output.avi", fourcc, 20, screen_size)
+rec_seconds = 60
+fps = 20
+
+
+# Video Function
+def start_rec_video():
+
+    for _ in range(rec_seconds):
+        for _ in range(fps):
+            img = pyautogui.screenshot()
+            frame = np.array(img)
+            final_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out.write(final_frame)
+    print("Done Video Recording")
+
+
+# Function for opening the browser
+def open_browser():
+    # Here we define the function:
+    path = "C:\Program Files (x86)\chromedriver.exe"
+    driver = webdriver.Chrome(path)
+    driver.get("https://www.youtube.com/")
+
+    # This function accepts cookies
+    driver.maximize_window()
+    button = driver.find_element_by_xpath('//button[normalize-space()="I agree"]')
+    button.click()
+
+    # This function clicks random video by id
+    button = driver.find_element_by_id('video-title')
+    button.click()
+
+    # This time.sleep is needed for the add to pass
+    time.sleep(7)
+
+    # Choose the random video
+    button = driver.find_elements_by_id('ad-text:7')
+    random_video = random.choice(button)
+    random_video.click()
+
+    # After the ad was clicked, start the recording audio
+    start_rec_audio()
+    print("Done Audio Recording")
+    driver.quit()
+
+
+# Threads:
+thread_rec_video = threading.Thread(target=start_rec_video)
+thread_open_browser = threading.Thread(target=open_browser)
+
+thread_rec_video.start()
+thread_open_browser.start()
+
+# I've set this time.sleep so it will wait for the output_sound.wav to be generated first then it will plot it.
+time.sleep(50)
+
+# This function plots the audio file:
+file_name = 'output_sound.wav'
+audio = AudioSegment.from_mp3(file_name)
+signal = sfile.read(file_name)
+samples = audio.get_array_of_samples()
+samples_sf = 0
+
+try:
+    samples_sf = signal[:, 0]  # This can be explained as [ first_row:last_row , column_0 ], gets all the values from a matrix/2D list
+
+except:                  # This bare 'except' error is caused except catching all exceptions including SystemExit and KeyboardInterrupt, should not be used but it will work.
+    samples_sf = signal
+
+
+def plot_audio_dbfs(sample):
+    reference = 1
+    if sample != 0:
+        return 20 * np.log10(abs(sample) / reference)
+
+    else:
+        return -60
+
+
+data = [plot_audio_dbfs(sample) for sample in samples_sf]
+percentile = np.percentile(data, [10, 20, 30, 40, 50, 60, 70])
+plt.plot(data)
+plt.xlabel('Samples')
+plt.ylabel('dB Full Scale (dBFS)')
+plt.tight_layout()
+plt.show()
