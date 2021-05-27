@@ -2,7 +2,7 @@
 
 The main function of this app is to record the desktop as it starts to perform some tasks:
 - Start the web browser (in this case: Google Chrome), accept cookies and goes to www.youtube.com
-- Clicks random video (not that random, after version 1.3, the randomness has been removed), waits for the add to pass then starts the audio recording function.
+- Clicks random video (not that random, after version 1.3, the randomness has been removed), waits for the ad to pass then starts the audio recording function.
 - After a certain amount of time (30 seconds of audio recording in version 1.3), the whole browser stops and the sound file is shown on a graph in dBFS over samples.
 
 Before starting the code, make sure you have installed all modules correctly (+ the webdriver for selenium and Microsoft Visual C++ v14.0 Build Tools for PyAudio).
