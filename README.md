@@ -1,3 +1,5 @@
+# I didn't know how to upload, delete, or commit files to GitHub when I've created this repository. So if it looks messy and weird, now you know why.
+
 # TemaEnea
 
 The main function of this app is to record the desktop as it starts to perform some tasks:
